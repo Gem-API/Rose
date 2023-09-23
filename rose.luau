@@ -49,7 +49,7 @@ local Instance_new = Instance.new
 --------------------------------------------------------------------------------
 -- Datasets
 
-local ROSE_VERSION = -1
+local ROSE_VERSION = 1
 
 local DESERIALIZE_DEFAULT_PARENT = game:GetService("Lighting")
 
