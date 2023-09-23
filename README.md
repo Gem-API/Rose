@@ -13,7 +13,7 @@ Rose is designed with three primary objectives:
 
 2. **Space Efficiency**: Serialized tables should be as small as possible.
 
-3. **Speed**: Rose is designed for efficiency and speed, even when dealing with complex Roblox data structures, with a speed of around 60,000 instances per second.
+3. **Speed**: Rose is designed for efficiency and speed, even when dealing with complex Roblox data structures, with speeds of around 25,000 instances/second serialization and 15,000 instance/second deserialization.
 
 ## What Rose is Not
 
@@ -21,7 +21,7 @@ It's important to note that Rose is not a complete Roblox-to-Data solution. Inst
 
 1. Convert a Roblox Instance to a Lua table using Rose.
 2. Convert the Lua table to a language-agnostic format like JSON or Messagepack.
-3. Compress the language-agnostic format (Rose, while efficient in size, inevitably contains repetitive data. This makes compression highly effective, often reducing size by 90%).
+3. Compress the language-agnostic format (Rose, while efficient in size, inevitably contains repetitive data. This makes compression highly effective, often reducing size by 80%).
 4. Encode the compressed data for storage on platforms that do not support binary data storage.
 
 ## Contributing Guide
@@ -50,5 +50,7 @@ ClassNameOfInstance = {
 Order properties based on their sequence in the Roblox Studio properties window and leave an empty line between distinct property categories as displayed in the properties panel.
 
 Some properties cannot be written to, only read from. Do not put read-only properties in this panel because the script will fail when setting them during deserialization. The [Roblox API](https://create.roblox.com/docs/en-us/reference/engine) is your friend.
+
+The `Parent` property of all Instances is handled automatically, so please do not include it.
 
 Before submitting a pull request, please test your new dataset by serializing and deserializing any classes you have added or changed, making sure that every property you intended to be saved has been saved and loaded correctly.
