@@ -1,36 +1,54 @@
 # Rose
 
-Rose (RoSe; or Roblox Serializer) is feature complete Roblox Instance serializer written entirely in Luau. It can convert any instantiable Roblox instance into a corresponding lua table preserving children recursively, as well as storing any writable property
+![GitHub release (with filter)](https://img.shields.io/github/v/release/Gem-API/Rose)
 
-Rose has 3 main goals:
-* To be general purpose.
-* To be space efficient.
-* To be fast.
 
-----
-### Table of Contents
+Rose, short for Roblox Serializer (RoSe), is a feature-complete Roblox Instance serializer, written entirely in Luau. It is capable of converting any instantiable Roblox instance into a corresponding Lua table while preserving children recursively and storing any writable properties.
 
-* [Summary](#rose)
-* [What Rose is Not](#what-rose-is-not)
-* [Contributing Guide](#contributing-guide)
+## Key Objectives
 
-----
-### What Rose is Not:
+Rose is designed with three primary objectives:
 
-This project is not a complete Roblox to Data solution. Its goal is to serve as the "missing link" in a chain of tools that can be used to serialize Roblox data.
+1. **General Purpose**: Rose aims to provide a versatile solution that can handle anything from Model to GUI serialization.
 
-Instead, the rest of the process is left to the developer. Rose is simply a tool for the first step.
+2. **Space Efficiency**: Serialized tables should be as small as possible.
 
-In general, the process should look something like this:
+3. **Speed**: Rose is designed for efficiency and speed, even when dealing with complex Roblox data structures, with a speed of around 60,000 instances per second.
 
-1. Convert a Roblox Instance to a Lua table with Rose.
-2. Convert the lua table to a language-agnostic format like JSON or Messagepack.
-3. Compress the generic data format (**Note:** while Rose does aim for size efficiency, it is inevitable that there will be large amounts of repeating data. As such compression is extremly effective on Rose data, reducing storage sizes by around 80%).
-4. Encode the compressed data so that it can be stored by platforms that do not allow for binary data storage.
+## What Rose is Not
 
-----
-### Contributing Guide
+It's important to note that Rose is not a complete Roblox-to-Data solution. Instead, it serves as a critical component (the "missing link") within a broader data serialization workflow. An example workflow is as follows:
 
-Rose uses [Simple Versioning](https://simver.org/) as its versioning scheme for simplicity, where every major version indicates a breaking change to the specification (i.e. the new Rose version cannot decode tables made by the previous Rose version).
+1. Convert a Roblox Instance to a Lua table using Rose.
+2. Convert the Lua table to a language-agnostic format like JSON or Messagepack.
+3. Compress the language-agnostic format (Rose, while efficient in size, inevitably contains repetitive data. This makes compression highly effective, often reducing size by 90%).
+4. Encode the compressed data for storage on platforms that do not support binary data storage.
 
-Please follow the code style format of the project, keeping line lengths 80 characters or less for readability.
+## Contributing Guide
+
+Contributors to the Rose project should adhere to the following guidelines:
+
+- **Versioning**: Rose uses [Simple Versioning](https://simver.org/) as its versioning scheme. Major versions indicate breaking changes to the specification, ensuring compatibility with tables created by previous Rose versions.
+
+- **Code Style**: Maintain the code style format of the project. Keep line lengths at 80 characters or less.
+
+### Updating the dataset
+
+Rose uses a predefined lookup table to determine what it can and cannot serialize. The most basic (but valuable) contribution is updating the dataset with new Instance types or properties.
+
+To update the dataset, add another item in the `MUTABLE_PROPERTIES` variable with the following format:
+
+```lua
+ClassNameOfInstance = {
+    "Property1",
+    "Property2",
+
+    "Property3",
+},
+```
+
+Order properties based on their sequence in the Roblox Studio properties window and leave an empty line between distinct property categories as displayed in the properties panel.
+
+Some properties cannot be written to, only read from. Do not put read-only properties in this panel because the script will fail when setting them during deserialization. The [Roblox API](https://create.roblox.com/docs/en-us/reference/engine) is your friend.
+
+Before submitting a pull request, please test your new dataset by serializing and deserializing any classes you have added or changed, making sure that every property you intended to be saved has been saved and loaded correctly.
