@@ -49,7 +49,7 @@ local Instance_new = Instance.new
 --------------------------------------------------------------------------------
 -- Datasets
 
-local ROSE_VERSION = 0
+local ROSE_VERSION = -1
 
 local DESERIALIZE_DEFAULT_PARENT = game:GetService("Lighting")
 
@@ -69,6 +69,18 @@ local MUTABLE_PROPERTIES = {
 		"Scale",
 		"TextureId"
 	},
+	BlockMesh = {
+		"Name",
+		"Offset",
+		"Scale",
+		"VertexColor"
+	},
+	CylinderMesh = {
+		"Name",
+		"Offset",
+		"Scale",
+		"VertexColor"
+	},
 	Weld = {
 		"C0",
 		"C1",
@@ -78,41 +90,146 @@ local MUTABLE_PROPERTIES = {
 
 		"Enabled"
 	},
+	Snap = {
+		"C0",
+		"C1",
+		"Name",
+		"Part0",
+		"Part1",
+
+		"Enabled"
+	},
 	Part = {
+		"CastShadow",
 		"Color",
 		"Material",
 		"Reflectance",
 		"Transparency",
 
+		"Locked",
 		"Name",
 
 		"Size",
 		"Position",
 		"Rotation",
 
+		"CanCollide",
 		"Anchored",
-		"CanCollide"
+		"Shape",
+
+		"BackSurface",
+		"BottomSurface",
+		"FrontSurface",
+		"LeftSurface",
+		"RightSurface",
+		"TopSurface"
 	},
 	WedgePart = {
+		"CastShadow",
 		"Color",
 		"Material",
 		"Reflectance",
 		"Transparency",
 
+		"Locked",
 		"Name",
 
 		"Size",
 		"Position",
 		"Rotation",
 
+		"CanCollide",
 		"Anchored",
-		"CanCollide"
+
+		"BackSurface",
+		"BottomSurface",
+		"FrontSurface",
+		"LeftSurface",
+		"RightSurface",
+		"TopSurface"
+	},
+	CornerWedgePart = {
+		"CastShadow",
+		"Color",
+		"Material",
+		"Reflectance",
+		"Transparency",
+
+		"Locked",
+		"Name",
+
+		"Size",
+		"Position",
+		"Rotation",
+
+		"CanCollide",
+		"Anchored",
+
+		"BackSurface",
+		"BottomSurface",
+		"FrontSurface",
+		"LeftSurface",
+		"RightSurface",
+		"TopSurface"
+	},
+	Decal = {
+		"Color3",
+		"Texture",
+		"Transparency",
+		"ZIndex",
+
+		"Face",
+		"Name"
+	},
+	Texture = {
+		"Color3",
+		"OffsetStudsU",
+		"OffsetStudsV",
+		"StudsPerTileU",
+		"StudsPerTileV",
+		"Texture",
+		"Transparency",
+		"ZIndex",
+
+		"Face",
+		"Name"
 	},
 	ClickDetector = {
 		"MaxActivationDistance",
 		"Name",
 
 		"CursorIcon"
+	},
+	PointLight = {
+		"Brightness",
+		"Color",
+		"Enabled",
+		"Range",
+		"Shadows",
+
+		"Name"
+	},
+	SpotLight = {
+		"Angle",
+		"Brightness",
+		"Color",
+		"Enabled",
+		"Face",
+		"Range",
+		"Shadows",
+
+		"Name"
+	},
+	SurfaceLight = {
+		"Angle",
+		"Brightness",
+		"Color",
+		"Enabled",
+		"Face",
+		"Range",
+		"Shadows",
+
+		"Name"
 	}
 }
 
@@ -197,7 +314,6 @@ local function serialize_property(p)
 			table.find(p.EnumType:GetEnumItems(), p)
 		}
 	elseif _type == "CFrame" then
-		local angles = p:ToAxisAngle()
 		value = table.pack(p:GetComponents())
 	elseif _type == "Instance" then
 		if not p:IsDescendantOf(scope) then
@@ -212,8 +328,8 @@ local function serialize_property(p)
 	end
 
 	return {
-		t = prop_type,
-		v = value
+		prop_type,
+		value
 	}
 end
 
@@ -223,25 +339,30 @@ local function serialize_instance(obj)
 	local prop_pool = MUTABLE_PROPERTIES[obj.ClassName]
 
 	for i in prop_pool do
-		props[prop_pool[i]] = serialize_property(obj[prop_pool[i]])
+        local p = prop_pool[i]
+		if DEFAULT_INSTANCES[obj.ClassName][p] == obj[p] then
+			continue
+		end
+		props[p] = serialize_property(obj[p])
 	end
 
 	local children = {}
 
 	local child_pool = obj:GetChildren()
 	for i in child_pool do
-		if not MUTABLE_PROPERTIES[child_pool[i].ClassName] then
+        local c = child_pool[i]
+		if not MUTABLE_PROPERTIES[c.ClassName] then
 			--warn("Cannot serialize instance " .. child_pool[i].ClassName)
 			continue
 		end
-		children[#children + 1] = serialize_instance(child_pool[i])
+		children[#children + 1] = serialize_instance(c)
 	end 
 
 	return {
-		u = uid_reference[obj],
-		t = VI_CLASSNAMES[obj.ClassName],
-		p = props,
-		c = children
+		uid_reference[obj],
+		VI_CLASSNAMES[obj.ClassName],
+		props,
+		children
 	}
 end
 
@@ -257,8 +378,8 @@ end
 
 
 local function deserialize_property(property, prop_name, instance)
-	local prop_type = IV_PROPERTY_TYPES[property.t]
-	local value = property.v
+	local prop_type = IV_PROPERTY_TYPES[property[1]]
+	local value = property[2]
 
 	local result = nil
 
@@ -286,19 +407,19 @@ end
 
 local function deserialize_instance(obj)
 	local instance = Instance_new(
-        IV_CLASSNAMES[obj.t], DESERIALIZE_DEFAULT_PARENT
-    )
+		IV_CLASSNAMES[obj[2]], DESERIALIZE_DEFAULT_PARENT
+	)
 
-	for i in obj.c do
-		local child = deserialize_instance(obj.c[i])
+	for i in obj[4] do
+		local child = deserialize_instance(obj[4][i])
 		child.Parent = instance
 	end
 
-	for name in obj.p do
-		instance[name] = deserialize_property(obj.p[name], name, instance)
+	for name in obj[3] do
+		instance[name] = deserialize_property(obj[3][name], name, instance)
 	end
 
-	uid_reference[obj.u] = instance
+	uid_reference[obj[1]] = instance
 
 	return instance
 end
