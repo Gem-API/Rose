@@ -410,14 +410,11 @@ local function deserialize_property(property, prop_name, instance)
 	return result
 end
 
-local function deserialize_instance(obj)
-	local instance = Instance_new(
-		IV_CLASSNAMES[obj[2]], DESERIALIZE_DEFAULT_PARENT
-	)
+local function deserialize_instance(obj, parent)
+	local instance = Instance_new(IV_CLASSNAMES[obj[2]])
 
 	for i in obj[4] do
-		local child = deserialize_instance(obj[4][i])
-		child.Parent = instance
+		local child = deserialize_instance(obj[4][i], instance)
 	end
 
 	for name in obj[3] do
@@ -425,7 +422,9 @@ local function deserialize_instance(obj)
 	end
 
 	uid_reference[obj[1]] = instance
-
+	
+	instance.Parent = DESERIALIZE_DEFAULT_PARENT or parent
+	
 	return instance
 end
 
@@ -441,12 +440,9 @@ function rose.serialize(instance)
 	end
 
 	scope = instance
-    
-    skipped_instance_types = {}
-    skipped_instances = 0
 
 	uid_reference = {}
-    build_uid_reference(instance)
+	build_uid_reference(instance)
 
 	local result = serialize_instance(instance)
 

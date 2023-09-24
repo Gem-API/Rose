@@ -13,7 +13,7 @@ Rose is designed with three primary objectives:
 
 2. **Space Efficiency**: Serialized tables should be as small as possible.
 
-3. **Speed**: Rose is designed for efficiency and speed, even when dealing with complex Roblox data structures, with speeds of around 25,000 instances/second serialization and 15,000 instance/second deserialization.
+3. **Speed**: Rose is designed for efficiency and speed, even when dealing with complex Roblox data structures, with speeds of around 25,000 instances/second serialization and 27,000 instance/second deserialization.
 
 ## What Rose is Not
 
