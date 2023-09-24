@@ -273,6 +273,9 @@ local scope = nil
 local uid_counter = 0
 local uid_reference = {}
 
+local skipped_instance_types = {}
+local skipped_instances = 0
+
 local post_deserialize_links = {}
 
 local function build_uid_reference(instance)
@@ -339,7 +342,7 @@ local function serialize_instance(obj)
 	local prop_pool = MUTABLE_PROPERTIES[obj.ClassName]
 
 	for i in prop_pool do
-        local p = prop_pool[i]
+		local p = prop_pool[i]
 		if DEFAULT_INSTANCES[obj.ClassName][p] == obj[p] then
 			continue
 		end
@@ -350,9 +353,11 @@ local function serialize_instance(obj)
 
 	local child_pool = obj:GetChildren()
 	for i in child_pool do
-        local c = child_pool[i]
+		local c = child_pool[i]
 		if not MUTABLE_PROPERTIES[c.ClassName] then
-			--warn("Cannot serialize instance " .. child_pool[i].ClassName)
+			skipped_instance_types[c.ClassName] = 1
+			skipped_instances += 1
+
 			continue
 		end
 		children[#children + 1] = serialize_instance(c)
@@ -430,14 +435,31 @@ end
 local rose = {}
 
 function rose.serialize(instance)
+	if not MUTABLE_PROPERTIES[instance.ClassName] then
+		warn("Given instance was not serializable")
+		return nil
+	end
+
 	scope = instance
+    
+    skipped_instance_types = {}
+    skipped_instances = 0
 
 	uid_reference = {}
-	build_uid_reference(instance)
+    build_uid_reference(instance)
+
+	local result = serialize_instance(instance)
+
+	if skipped_instances ~= 0 then
+		warn("ROSE - Some instance(s) were not serialized:")
+		for i in skipped_instance_types do
+			warn("    Type '" .. i .. "'")
+		end
+	end
 
 	return {
 		["version"] = ROSE_VERSION,
-		["tree"] = serialize_instance(instance)
+		["tree"] = result
 	}
 end
 
