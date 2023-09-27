@@ -60,6 +60,9 @@ local ROSE_VERSION = 1
 local DESERIALIZE_DEFAULT_PARENT = game:GetService("Lighting")
 
 local MUTABLE_PROPERTIES = {
+	Folder = {
+		"Name"
+	},
 	Model = {
 		"Name",
 
@@ -178,6 +181,124 @@ local MUTABLE_PROPERTIES = {
 		"RightSurface",
 		"TopSurface"
 	},
+	TrussPart = {
+		"CastShadow",
+		"Color",
+		"Material",
+		"Reflectance",
+		"Transparency",
+
+		"Locked",
+		"Name",
+
+		"Size",
+		"Position",
+		"Rotation",
+
+		"CanCollide",
+		"Anchored",
+		"Shape",
+
+		"BackSurface",
+		"BottomSurface",
+		"FrontSurface",
+		"LeftSurface",
+		"RightSurface",
+		"TopSurface"
+	},
+	SpawnLocation = {
+		"CastShadow",
+		"Color",
+		"Material",
+		"Reflectance",
+		"Transparency",
+
+		"Locked",
+		"Name",
+
+		"Size",
+		"Position",
+		"Rotation",
+
+		"CanCollide",
+		"Anchored",
+		"Shape",
+
+		"BackSurface",
+		"BottomSurface",
+		"FrontSurface",
+		"LeftSurface",
+		"RightSurface",
+		"TopSurface",
+
+		"Duration",
+
+		"AllowTeamChangeOnTouch",
+		"Neutral",
+		"TeamColor"
+	},
+	Seat = {
+		"CastShadow",
+		"Color",
+		"Material",
+		"Reflectance",
+		"Transparency",
+
+		"Locked",
+		"Name",
+
+		"Size",
+		"Position",
+		"Rotation",
+
+		"CanCollide",
+		"Anchored",
+		"Shape",
+
+		"BackSurface",
+		"BottomSurface",
+		"FrontSurface",
+		"LeftSurface",
+		"RightSurface",
+		"TopSurface",
+
+		"Disabled"
+	},
+	VehicleSeat = {
+		"CastShadow",
+		"Color",
+		"Material",
+		"Reflectance",
+		"Transparency",
+
+		"Locked",
+		"Name",
+
+		"Size",
+		"Position",
+		"Rotation",
+
+		"CanCollide",
+		"Anchored",
+		"Shape",
+
+		"BackSurface",
+		"BottomSurface",
+		"FrontSurface",
+		"LeftSurface",
+		"RightSurface",
+		"TopSurface",
+
+		"Disabled",
+		"HeadsUpDisplay",
+		"MaxSpeed",
+		"Steer",
+		"SteerFloat",
+		"Throttle",
+		"ThrottleFloat",
+		"Torque",
+		"TurnSpeed"
+	},
 	Decal = {
 		"Color3",
 		"Texture",
@@ -236,6 +357,30 @@ local MUTABLE_PROPERTIES = {
 		"Shadows",
 
 		"Name"
+	},
+	Fire = {
+		"Color",
+		"Enabled",
+		"Heat",
+		"Name",
+		"SecondaryColor",
+		"Size",
+		"TimeScale"
+	},
+	Smoke = {
+		"Color",
+		"Enabled",
+		"Name",
+		"Opacity",
+		"RiseVelocity",
+		"Size",
+		"TimeScale"
+	},
+	Sparkles = {
+		"Enabled",
+		"Name",
+		"SparkleColor",
+		"TimeScale"
 	}
 }
 
