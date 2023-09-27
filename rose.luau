@@ -44,7 +44,13 @@ local function invert_table(t)
 	return s
 end
 
+local table_pack = table.pack
+local table_unpack = table.unpack
+
 local Instance_new = Instance.new
+local Vector3_new = Vector3.new
+local Color3_new = Color3.new
+local CFrame_new = CFrame.new
 
 --------------------------------------------------------------------------------
 -- Datasets
@@ -241,9 +247,6 @@ end
 
 local VI_CLASSNAMES = invert_table(IV_CLASSNAMES)
 
--- I/V Pairs
-local ENUMS = Enum:GetEnums()
-
 local IV_PROPERTY_TYPES = {
 	"string",
 	"number",
@@ -266,17 +269,33 @@ for className in MUTABLE_PROPERTIES do
 end
 
 --------------------------------------------------------------------------------
--- Internal Functions
+-- Internal API
+
+local give_warnings = false
 
 local scope = nil
 
 local uid_counter = 0
 local uid_reference = {}
 
-local skipped_instance_types = {}
 local skipped_instances = 0
+local skipped_instance_types = {}
 
+local post_deserialize_links_counter = 0
 local post_deserialize_links = {}
+
+local function reset_internal_variables()
+	scope = nil
+	
+	uid_counter = 0
+	uid_reference = {}
+	
+	skipped_instances = 0
+	skipped_instance_types = {}
+	
+	post_deserialize_links_counter = 0
+	post_deserialize_links = {}
+end
 
 local function build_uid_reference(instance)
 	uid_counter += 1
@@ -289,7 +308,7 @@ local function build_uid_reference(instance)
 end
 
 ----------------------------------------
--- Serialize
+-- Serializer
 
 local function serialize_property(p)
 	local _type = typeof(p)
@@ -303,21 +322,25 @@ local function serialize_property(p)
 
 	if _type == "string" then
 		value = p
+
 	elseif _type == "number" then
 		value = p
+
 	elseif _type == "boolean" then
 		value = p
+
 	elseif _type == "Vector3" then
 		value = {p.X, p.Y, p.Z}
+
 	elseif _type == "Color3" then
 		value = {p.R, p.G, p.B}
+
 	elseif _type == "EnumItem" then
-		value = {
-			table.find(ENUMS, p.EnumType),
-			table.find(p.EnumType:GetEnumItems(), p)
-		}
+		value = p.Value
+
 	elseif _type == "CFrame" then
-		value = table.pack(p:GetComponents())
+		value = table_pack(p:GetComponents())
+
 	elseif _type == "Instance" then
 		if not p:IsDescendantOf(scope) then
 			warn("Object-type property references '" .. p.Name .. 
@@ -337,18 +360,21 @@ local function serialize_property(p)
 end
 
 local function serialize_instance(obj)
-	local props = {}
+	local class_name = obj.ClassName
 
-	local prop_pool = MUTABLE_PROPERTIES[obj.ClassName]
+	local prop_pool = MUTABLE_PROPERTIES[class_name]
+
+	local props = {}
 
 	for i in prop_pool do
 		local p = prop_pool[i]
-		if DEFAULT_INSTANCES[obj.ClassName][p] == obj[p] then
+		if DEFAULT_INSTANCES[class_name][p] == obj[p] then
 			continue
 		end
 		props[p] = serialize_property(obj[p])
 	end
 
+	local children_counter = 0
 	local children = {}
 
 	local child_pool = obj:GetChildren()
@@ -360,19 +386,20 @@ local function serialize_instance(obj)
 
 			continue
 		end
-		children[#children + 1] = serialize_instance(c)
+		children_counter += 1
+		children[children_counter] = serialize_instance(c)
 	end 
 
 	return {
 		uid_reference[obj],
-		VI_CLASSNAMES[obj.ClassName],
+		VI_CLASSNAMES[class_name],
 		props,
 		children
 	}
 end
 
 ----------------------------------------
--- Deserialize
+-- Deserializer
 
 local function post_deserialize_link_pass()
 	for i in post_deserialize_links do
@@ -390,20 +417,28 @@ local function deserialize_property(property, prop_name, instance)
 
 	if prop_type == "string" then
 		result = value
+
 	elseif prop_type == "number" then
 		result = value
+
 	elseif prop_type == "boolean" then
 		result = value
+
 	elseif prop_type == "Vector3" then
-		result = Vector3.new(value[1], value[2], value[3])
+		result = Vector3_new(value[1], value[2], value[3])
+
 	elseif prop_type == "Color3" then
-		result = Color3.new(value[1], value[2], value[3])
+		result = Color3_new(value[1], value[2], value[3])
+
 	elseif prop_type == "EnumItem" then
-		result = ENUMS[value[1]]:GetEnumItems()[value[2]]
+		result = value
+
 	elseif prop_type == "CFrame" then
-		result = CFrame.new(table.unpack(value))
+		result = CFrame_new(table_unpack(value))
+
 	elseif prop_type == "Instance" then
-		post_deserialize_links[#post_deserialize_links + 1] =
+		post_deserialize_links_counter += 1
+		post_deserialize_links[post_deserialize_links_counter] =
 			{instance, prop_name, value}
 	end
 
@@ -414,7 +449,7 @@ local function deserialize_instance(obj, parent)
 	local instance = Instance_new(IV_CLASSNAMES[obj[2]])
 
 	for i in obj[4] do
-		local child = deserialize_instance(obj[4][i], instance)
+		deserialize_instance(obj[4][i], instance)
 	end
 
 	for name in obj[3] do
@@ -422,9 +457,9 @@ local function deserialize_instance(obj, parent)
 	end
 
 	uid_reference[obj[1]] = instance
-	
-	instance.Parent = DESERIALIZE_DEFAULT_PARENT or parent
-	
+
+	instance.Parent = parent or DESERIALIZE_DEFAULT_PARENT
+
 	return instance
 end
 
@@ -439,14 +474,13 @@ function rose.serialize(instance)
 		return nil
 	end
 
-	scope = instance
+	reset_internal_variables()
 
-	uid_reference = {}
 	build_uid_reference(instance)
 
 	local result = serialize_instance(instance)
 
-	if skipped_instances ~= 0 then
+	if skipped_instances ~= 0 and give_warnings then
 		warn("ROSE - Some instance(s) were not serialized:")
 		for i in skipped_instance_types do
 			warn("    Type '" .. i .. "'")
@@ -465,14 +499,17 @@ function rose.deserialize(packet)
 		return nil
 	end
 
-	uid_reference = {}
-	post_deserialize_links = {}
+	reset_internal_variables()
 
 	local result = deserialize_instance(packet.tree)
 
 	post_deserialize_link_pass()
 
 	return result
+end
+
+function rose.give_warnings(value: boolean)
+	give_warnings = value
 end
 
 return rose
