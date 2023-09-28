@@ -553,14 +553,31 @@ local function serialize_property(p)
 	elseif _type == "boolean" then
 		value = p
 
-	elseif _type == "Vector2" then
-		value = {p.X, p.Y}
-
 	elseif _type == "Vector3" then
 		value = {p.X, p.Y, p.Z}
 
 	elseif _type == "Color3" then
 		value = {p.R, p.G, p.B}
+
+	elseif _type == "EnumItem" then
+		value = p.Value
+
+	elseif _type == "Instance" then
+		if not p:IsDescendantOf(scope) then
+			warn("Object-type property references '" .. p.Name .. 
+				"' which is not in the serialization scope."
+			)
+
+			return nil
+		else
+			value = uid_reference[p]
+		end
+
+	elseif _type == "CFrame" then
+		value = table_pack(p:GetComponents())
+
+	elseif _type == "Vector2" then
+		value = {p.X, p.Y}
 
 	elseif _type == "ColorSequence" then
 		value = {}
@@ -573,12 +590,6 @@ local function serialize_property(p)
 			value[i] = {kp.Time, kpc.R, kpc.G, kpc.B}
 		end
 
-	elseif _type == "EnumItem" then
-		value = p.Value
-
-	elseif _type == "CFrame" then
-		value = table_pack(p:GetComponents())
-
 	elseif _type == "NumberRange" then
 		value = {p.Min, p.Max}
 
@@ -590,17 +601,6 @@ local function serialize_property(p)
 			local kp = kps[i]
 
 			value[i] = {kp.Time, kp.Value, kp.Envelope}
-		end
-
-	elseif _type == "Instance" then
-		if not p:IsDescendantOf(scope) then
-			warn("Object-type property references '" .. p.Name .. 
-				"' which is not in the serialization scope."
-			)
-
-			return nil
-		else
-			value = uid_reference[p]
 		end
 
 	end
@@ -676,14 +676,25 @@ local function deserialize_property(property, prop_name, instance)
 	elseif prop_type == "boolean" then
 		result = value
 
-	elseif prop_type == "Vector2" then
-		result = Vector2_new(value.X, value.Y)
-
 	elseif prop_type == "Vector3" then
 		result = Vector3_new(value[1], value[2], value[3])
 
 	elseif prop_type == "Color3" then
 		result = Color3_new(value[1], value[2], value[3])
+
+	elseif prop_type == "EnumItem" then
+		result = value
+
+	elseif prop_type == "Instance" then
+		post_deserialize_links_counter += 1
+		post_deserialize_links[post_deserialize_links_counter] =
+			{instance, prop_name, value}
+
+	elseif prop_type == "CFrame" then
+		result = CFrame_new(table_unpack(value))
+
+	elseif prop_type == "Vector2" then
+		result = Vector2_new(value.X, value.Y)
 
 	elseif prop_type == "ColorSequence" then
 		local kps = {}
@@ -696,17 +707,6 @@ local function deserialize_property(property, prop_name, instance)
 		end
 
 		result = ColorSequence_new(kps)
-
-	elseif prop_type == "EnumItem" then
-		result = value
-
-	elseif prop_type == "CFrame" then
-		result = CFrame_new(table_unpack(value))
-
-	elseif prop_type == "Instance" then
-		post_deserialize_links_counter += 1
-		post_deserialize_links[post_deserialize_links_counter] =
-			{instance, prop_name, value}
 
 	elseif prop_type == "NumberRange" then
 		result = NumberRange_new(value[1], value[2])
