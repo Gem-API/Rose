@@ -61,7 +61,7 @@ local NumberSequence_new = NumberSequence.new
 --------------------------------------------------------------------------------
 -- Datasets
 
-local ROSE_VERSION = 1
+local ROSE_VERSION = 2
 
 local DESERIALIZE_DEFAULT_PARENT = game:GetService("Lighting")
 
