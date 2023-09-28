@@ -422,7 +422,37 @@ local MUTABLE_PROPERTIES = {
 		"TimeScale",
 		"VelocityInheritance",
 		"WindAffectsDrag"
-	}
+	},
+	Beam = {
+		"Color",
+		"Enabled",
+		"LightEmission",
+		"LightInfluence",
+		"Texture",
+		"TextureLength",
+		"TextureMode",
+		"TextureSpeed",
+		"Transparency",
+		"ZOffset",
+
+		"Name",
+		
+		"Attachment0",
+		"Attachment1",
+		"CurveSize0",
+		"CurveSize1",
+		"FaceCamera",
+		"Segments",
+		"Width0",
+		"Width1"
+	},
+	Attachment = {
+		"Visible",
+
+		"Name",
+
+		"CFrame"
+	},
 }
 
 local IV_CLASSNAMES = {}
