@@ -48,9 +48,15 @@ local table_pack = table.pack
 local table_unpack = table.unpack
 
 local Instance_new = Instance.new
+local Vector2_new = Vector2.new
 local Vector3_new = Vector3.new
 local Color3_new = Color3.new
+local ColorSequence_new = ColorSequence.new
+local ColorSequenceKeypoint_new = ColorSequenceKeypoint.new
 local CFrame_new = CFrame.new
+local NumberRange_new = NumberRange.new
+local NumberSequenceKeypoint_new = NumberSequenceKeypoint.new
+local NumberSequence_new = NumberSequence.new
 
 --------------------------------------------------------------------------------
 -- Datasets
@@ -381,6 +387,41 @@ local MUTABLE_PROPERTIES = {
 		"Name",
 		"SparkleColor",
 		"TimeScale"
+	},
+	ParticleEmitter = {
+		"Color",
+		"LightEmission",
+		"LightInfluence",
+		"Orientation",
+		"Size",
+		"Squash",
+		"Texture",
+		"Transparency",
+		"ZOffset",
+
+		"Name",
+		"EmissionDirection",
+		"Enabled",
+		"Lifetime",
+		"Rate",
+		"Rotation",
+		"RotSpeed",
+		"Speed",
+		"SpreadAngle",
+
+		"Shape",
+		"ShapeInOut",
+		"ShapeStyle",
+
+		"FlipbookLayout",
+
+		"Acceleration",
+
+		"Drag",
+		"LockedToPart",
+		"TimeScale",
+		"VelocityInheritance",
+		"WindAffectsDrag"
 	}
 }
 
@@ -397,9 +438,17 @@ local IV_PROPERTY_TYPES = {
 	"number",
 	"boolean",
 
+	"NumberRange",
+	"NumberSequence",
+
+	"Vector2",
 	"Vector3",
+
 	"Color3",
+	"ColorSequence",
+
 	"EnumItem",
+
 	"CFrame",
 
 	"Instance"
@@ -431,13 +480,13 @@ local post_deserialize_links = {}
 
 local function reset_internal_variables()
 	scope = nil
-	
+
 	uid_counter = 0
 	uid_reference = {}
-	
+
 	skipped_instances = 0
 	skipped_instance_types = {}
-	
+
 	post_deserialize_links_counter = 0
 	post_deserialize_links = {}
 end
@@ -474,17 +523,44 @@ local function serialize_property(p)
 	elseif _type == "boolean" then
 		value = p
 
+	elseif _type == "Vector2" then
+		value = {p.X, p.Y}
+
 	elseif _type == "Vector3" then
 		value = {p.X, p.Y, p.Z}
 
 	elseif _type == "Color3" then
 		value = {p.R, p.G, p.B}
 
+	elseif _type == "ColorSequence" then
+		value = {}
+
+		local kps = p.Keypoints
+		for i in kps do
+			local kp = kps[i]
+			local kpc = kp.Value
+
+			value[i] = {kp.Time, kpc.R, kpc.G, kpc.B}
+		end
+
 	elseif _type == "EnumItem" then
 		value = p.Value
 
 	elseif _type == "CFrame" then
 		value = table_pack(p:GetComponents())
+
+	elseif _type == "NumberRange" then
+		value = {p.Min, p.Max}
+
+	elseif _type == "NumberSequence" then
+		value = {}
+
+		local kps = p.Keypoints
+		for i in kps do
+			local kp = kps[i]
+
+			value[i] = {kp.Time, kp.Value, kp.Envelope}
+		end
 
 	elseif _type == "Instance" then
 		if not p:IsDescendantOf(scope) then
@@ -496,6 +572,7 @@ local function serialize_property(p)
 		else
 			value = uid_reference[p]
 		end
+
 	end
 
 	return {
@@ -569,11 +646,26 @@ local function deserialize_property(property, prop_name, instance)
 	elseif prop_type == "boolean" then
 		result = value
 
+	elseif prop_type == "Vector2" then
+		result = Vector2_new(value.X, value.Y)
+
 	elseif prop_type == "Vector3" then
 		result = Vector3_new(value[1], value[2], value[3])
 
 	elseif prop_type == "Color3" then
 		result = Color3_new(value[1], value[2], value[3])
+
+	elseif prop_type == "ColorSequence" then
+		local kps = {}
+
+		for i in value do
+			local v = value[i]
+			kps[i] = ColorSequenceKeypoint_new(
+				v[1], Color3_new(v[2], v[3], v[4])
+			)
+		end
+
+		result = ColorSequence_new(kps)
 
 	elseif prop_type == "EnumItem" then
 		result = value
@@ -585,6 +677,22 @@ local function deserialize_property(property, prop_name, instance)
 		post_deserialize_links_counter += 1
 		post_deserialize_links[post_deserialize_links_counter] =
 			{instance, prop_name, value}
+
+	elseif prop_type == "NumberRange" then
+		result = NumberRange_new(value[1], value[2])
+
+	elseif prop_type == "NumberSequence" then
+		local kps = {}
+
+		for i in value do
+			local v = value[i]
+			kps[i] = NumberSequenceKeypoint_new(
+				v[1], v[2], v[3]
+			)
+		end
+
+		result = NumberSequence_new(kps)
+
 	end
 
 	return result
