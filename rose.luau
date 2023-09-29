@@ -544,23 +544,26 @@ local function serialize_property(p)
 
 	local value = nil
 
-	if _type == "string" then
-		value = p
-
-	elseif _type == "number" then
-		value = p
+	if _type == "EnumItem" then
+		value = p.Value
+	
+	elseif _type == "Vector3" then
+		value = {p.X, p.Y, p.Z}
 
 	elseif _type == "boolean" then
 		value = p
 
-	elseif _type == "Vector3" then
-		value = {p.X, p.Y, p.Z}
-
 	elseif _type == "Color3" then
 		value = {p.R, p.G, p.B}
 
-	elseif _type == "EnumItem" then
-		value = p.Value
+	elseif _type == "number" then
+		value = p
+
+	elseif _type == "string" then
+		value = p
+
+	elseif _type == "CFrame" then
+		value = table_pack(p:GetComponents())
 
 	elseif _type == "Instance" then
 		if not p:IsDescendantOf(scope) then
@@ -572,9 +575,6 @@ local function serialize_property(p)
 		else
 			value = uid_reference[p]
 		end
-
-	elseif _type == "CFrame" then
-		value = table_pack(p:GetComponents())
 
 	elseif _type == "Vector2" then
 		value = {p.X, p.Y}
@@ -667,31 +667,31 @@ local function deserialize_property(property, prop_name, instance)
 
 	local result = nil
 
-	if prop_type == "string" then
-		result = value
-
-	elseif prop_type == "number" then
-		result = value
-
-	elseif prop_type == "boolean" then
+	if prop_type == "EnumItem" then
 		result = value
 
 	elseif prop_type == "Vector3" then
 		result = Vector3_new(value[1], value[2], value[3])
 
+	elseif prop_type == "boolean" then
+		result = value
+
 	elseif prop_type == "Color3" then
 		result = Color3_new(value[1], value[2], value[3])
 
-	elseif prop_type == "EnumItem" then
+	elseif prop_type == "number" then
 		result = value
+
+	elseif prop_type == "string" then
+		result = value
+
+	elseif prop_type == "CFrame" then
+		result = CFrame_new(table_unpack(value))
 
 	elseif prop_type == "Instance" then
 		post_deserialize_links_counter += 1
 		post_deserialize_links[post_deserialize_links_counter] =
 			{instance, prop_name, value}
-
-	elseif prop_type == "CFrame" then
-		result = CFrame_new(table_unpack(value))
 
 	elseif prop_type == "Vector2" then
 		result = Vector2_new(value.X, value.Y)
